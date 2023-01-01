@@ -1,12 +1,6 @@
 # Embedded-System-Design
 This repository is homework from [Embedded System Design, 2022 Fall](https://timetable.nycu.edu.tw/?r=main/crsoutline&Acy=111&Sem=1&CrsNo=535603&lang=zh-tw) in NYCU CS.
 
-
-# Author
-| github account |   name   |
-|----------------|----------|
-|  yxuan0329     |  梁芸瑄  |
-
 # Contents
 | Folders | Description |
 |---------|-------------|
