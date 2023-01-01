@@ -11,13 +11,13 @@ This repository is homework from [Embedded System Design, 2022 Fall](https://tim
 | Folders | Description |
 |---------|-------------|
 |[Lab 1](/lab1)| Hello World  |
-|[Lab 2](/lab2)| Display image |
-|[Lab 3](/lab3)| Video Output and crop images |
+|[Lab 2](/lab2)| Display image with framebuffer |
+|[Lab 3](/lab3)| Video Output and crop images from video stream |
 |[Lab 4](/lab4)| Display through HDMI and make a marquee |
 |[Lab 5](/lab5)| Madplay mp3 player on Linux |
 |[Final](/Final)| Human face recognizion |
 
 # Environment Setting
-Operating System: Ubuntu 14.04 or 16.04
-Development board: Embedsky E9V3
-Other tools that are needed in this repository: [lab 0](/lab0/111_lab_0.pdf)
+- Operating System: Ubuntu 14.04 or 16.04 <br>
+- Development board: Embedsky E9V3 <br>
+- Other tools that are needed in this repository: [lab 0](/lab0/111_lab_0.pdf)
