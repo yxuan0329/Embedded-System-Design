@@ -6,8 +6,9 @@ If it detected any human face, a blue square will block the face, and show the h
 
 ## Environment
 - Ubuntu 14.04 or 16.04
+- Development board: Embedsky E9V3
 
 ## How to start
 - First, clone the folder and set up the Ubuntu environment, webcam, and the board.
-- Duplicate the executable file to the board, be aware of the path you stored.
+- Compile the code to executable file and duplicate to the board, be aware of the path you stored.
 - Start the board, execute the file and you will get a real-time facial tracker on youe screen :)
