@@ -33,7 +33,15 @@ void parameterControl(unsigned char key);
 
 cv::CascadeClassifier face_cascade_official, face_cascade_ching, face_cascade_xuan, eyes_cascade, nose_cascade, mouth_cascade;
 std::string file_path_official, file_path_ching, file_path_xuan, file_path_eye;
+double detectScale_ching = 1.1;
+double detectScale_xuan = 1.1;
+int neighbor_ching = 0;
+int neighbor_xuan = 3;
 bool shouldDetect = false;
+
+std::vector<double> weights_ching, weights_xuan;
+std::vector<int> levels_ching, levels_xuan;
+
 time_t startTime;
 
 void reset_terminal_mode()
@@ -95,7 +103,7 @@ int main ( int argc, const char *argv[] )
 
     if( !camera.isOpened())
     {
-        cerr << "Could not open video device." << std::endl;
+        std::cerr << "Could not open video device." << std::endl;
         return 1;
     }
 
@@ -106,30 +114,32 @@ int main ( int argc, const char *argv[] )
     int fb_depth = fb_info.bits_per_pixel;
     // camera.set(cv::CAP_PROP_FRAME_WIDTH, fb_width);
     camera.set(cv::CAP_PROP_FRAME_HEIGHT, fb_height);
+    // camera.set(cv::CV_CAP_PROP_FPS,frame_rate);
 
 
     int frame_width= camera.get(CV_CAP_PROP_FRAME_WIDTH); // get frame width, height
     int frame_height= camera.get(CV_CAP_PROP_FRAME_HEIGHT);
+    cv::VideoWriter video("out.avi",CV_FOURCC('M','J','P','G'),10, cv::Size(frame_width,frame_height),true); // mjpg format
 
     file_path_official = "./haarcascades/haarcascade_frontalface_alt2.xml";
     file_path_ching = "./cascade.xml";
     file_path_xuan = "./cascade_xuan.xml";
     if(!face_cascade_official.load(file_path_official)) {
-        cout << "Error loading face cascade(official)!\n";
+        std::cout << "Error loading face cascade(official)!\n";
         return -1;
     }
     if(!face_cascade_ching.load(file_path_ching)) {
-        cout << "Error loading face cascade(ching)!\n";
+        std::cout << "Error loading face cascade(ching)!\n";
         return -1;
     }
     if(!face_cascade_xuan.load(file_path_xuan)) {
-        cout << "Error loading face cascade(xuan)!\n";
+        std::cout << "Error loading face cascade(xuan)!\n";
         return -1;
     }
     file_path_eye = "./haarcascades/haarcascade_eye_tree_eyeglasses.xml";
     if( !eyes_cascade.load( file_path_eye ) )
     {
-        cout << "--(!)Error loading eyes cascade\n";
+        std::cout << "--(!)Error loading eyes cascade\n";
         return -1;
     };
 
@@ -155,16 +165,21 @@ int main ( int argc, const char *argv[] )
           cvtColor(frame, new_frame, cv::COLOR_BGR2BGR565);
 
           // output the video frame to framebufer row by row
-          for ( int y = 0; y < frame_size.height; y++ ) {
+          for ( int y = 0; y < frame_size.height; y++ )
+          {
+
               ofs.seekp(y * fb_width * 2.0f);
               ofs.write(reinterpret_cast<char*>(new_frame.ptr(y)), frame_size.width * 2);
           }
+
+          video.write(frame);
         }
         key = getch();
         parameterControl(key);
     }
 
     camera.release ();
+    video.release();
     return 0;
 
 }
@@ -210,7 +225,7 @@ void detectAndDisplay(cv::Mat frame){
 
     int unknownID = 0;
     // detect human face
-    face_cascade_official.detectMultiScale(gray_frame, faces_general, 0, cv::Size(200,200), cv::Size(350,350));
+    face_cascade_official.detectMultiScale(gray_frame, faces_general, 1.1, 3, 0, cv::Size(200,200), cv::Size(350,350));
     //printf("faces_general.size = %d\n", faces_general.size());
     for (size_t i = 0; i < faces_general.size(); i++){
         cv::Point center(faces_general[i].x + faces_general[i].width/2, faces_general[i].y + faces_general[i].height/2);
@@ -240,40 +255,52 @@ void detectAndDisplay(cv::Mat frame){
         //-- In each face, detect eyes
         std::vector<cv::Rect> eyes;
         eyes_cascade.detectMultiScale( faceROI, eyes);
-        for ( size_t j = 0; j < eyes.size(); j++ ) {
+        for ( size_t j = 0; j < eyes.size(); j++ )
+        {
             cv::Point eye_center( faces_general[i].x + eyes[j].x + eyes[j].width/2, faces_general[i].y + eyes[j].y + eyes[j].height/2 );
             int radius = cvRound( (eyes[j].width + eyes[j].height)*0.25 );
             circle( frame, eye_center, radius, cv::Scalar( 255, 0, 0 ), 4 );
+            //std::string name = "Fiona " + std::to_string(weights_ching[0]);
+			      //showText(frame, name, cv::Point(center.x, center.y + faces_general[i].height/2 + 20)); // 20: text offset
         }
 
         // detect ching's face
-        face_cascade_ching.detectMultiScale(faceROI, faces_ching, 0, cv::Size(120,120), cv::Size(480,480), true);
+        //Mat human_face = Mat(gray_frame, faces_general[i]);
+        face_cascade_ching.detectMultiScale(faceROI, faces_ching,levels_ching,weights_ching, detectScale_ching, neighbor_ching, 0, cv::Size(120,120), cv::Size(480,480), true);
         //printf("faces_ching.size = %d\n", faces_ching.size());
 
-        if (faces_ching.size()) {
+        if (faces_ching.size()&& weights_ching[0] > 1.0) {
+          std::string name = "311553053 Ching Huang";
+          putText(frame, name, cv::Point(faces_general[i].x, faces_general[i].y + faces_general[i].height - 20), FONT_HERSHEY_COMPLEX, 0.5, Scalar(0, 0, 255));
+
           time_t currTime = time(NULL);
           double diff = difftime(currTime, startTime);
           cout <<"Detected Ching Huang, " << diff << " sec" << endl;
-          string info = "Ching " + to_string(diff) + " sec";
+          string info = to_string(diff) + " sec";
           putText(frame, info, cv::Point(faces_general[i].x, faces_general[i].y ), FONT_HERSHEY_COMPLEX, 0.5, Scalar(0, 0, 255));
         }
         else {
           //printf("faces_xuan.size = %d\n", faces_xuan.size());
-          face_cascade_xuan.detectMultiScale(gray_frame, faces_xuan, 0, cv::Size(120,120), cv::Size(480,480), true);
-          if (faces_xuan.size()) {
+          face_cascade_xuan.detectMultiScale(gray_frame, faces_xuan,levels_xuan, weights_xuan, detectScale_xuan, neighbor_xuan, 0, cv::Size(120,120), cv::Size(480,480), true);
+          if (faces_xuan.size() && weights_xuan[0] > 1.0) {
+            std::string name = "311553051 YunXuan";
+            putText(frame, name, cv::Point(faces_general[i].x, faces_general[i].y + faces_general[i].height - 20), FONT_HERSHEY_COMPLEX, 0.5, Scalar(0, 255, 0));
+
             time_t currTime = time(NULL);
             double diff = difftime(currTime, startTime);
             cout <<"Detected YunXuan, " << diff << " sec" << endl;
-            string info = "Xuan " to_string(diff) + " sec";
+            string info = to_string(diff) + " sec";
             putText(frame, info, cv::Point(faces_general[i].x, faces_general[i].y ), FONT_HERSHEY_COMPLEX, 0.5, Scalar(0, 255, 0));
           }
           else {
-            std::string name = "Unknown: " + to_string(++unknownID);
+            std::string name = "Unknown: " + (++unknownID);
             putText(frame, name, cv::Point(faces_general[i].x, faces_general[i].y + faces_general[i].height - 20), FONT_HERSHEY_COMPLEX, 0.5, Scalar(255, 0, 0));
 
             time_t currTime = time(NULL);
             double diff = difftime(currTime, startTime);
             cout <<"Detected unknown, " << diff << " sec" << endl;
+            // string info = to_string(diff) + " sec";
+            // putText(frame, info, cv::Point(faces_general[i].x, faces_general[i].y ), FONT_HERSHEY_COMPLEX, 0.5, Scalar(255, 0, 0));
           }
         }
 
@@ -282,7 +309,41 @@ void detectAndDisplay(cv::Mat frame){
 
 
 void parameterControl(unsigned char key){
+    //unsigned char key = '';
+    //key = getch();
     switch(key){
+        case 'w':
+            detectScale_ching += 0.05;
+            printf("detectScale_ching = %lf\n", detectScale_ching);
+            break;
+        case 's':
+            detectScale_ching -= 0.05;
+            printf("detectScale_ching = %lf\n", detectScale_ching);
+            break;
+        case 'e':
+            neighbor_ching += 1;
+            printf("neighbor_ching = %d\n", neighbor_ching);
+            break;
+        case 'd':
+            neighbor_ching -= 1;
+            printf("neighbor_ching = %d\n", neighbor_ching);
+            break;
+        case 'r':
+            detectScale_xuan += 0.05;
+            printf("detectScale_xuan = %lf\n", detectScale_xuan);
+            break;
+        case 'f':
+            detectScale_xuan -= 0.05;
+            printf("detectScale_xuan = %lf\n", detectScale_xuan);
+            break;
+        case 't':
+            neighbor_xuan += 1;
+            printf("neighbor_xuan = %d\n", neighbor_xuan);
+            break;
+        case 'g':
+            neighbor_xuan -= 1;
+            printf("neighbor_xuan = %d\n", neighbor_xuan);
+            break;
         case 'i':
             shouldDetect = !shouldDetect;
             startTime = time(NULL);
